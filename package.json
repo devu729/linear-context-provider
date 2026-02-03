@@ -1,0 +1,17 @@
+{
+  "name": "linear_nia",
+  "version": "1.0.0",
+  "description": "",
+  "main": "test-linear.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@linear/sdk": "^73.0.0",
+    "dotenv": "^17.2.3"
+  }
+}
