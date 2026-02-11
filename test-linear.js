@@ -1,64 +1,111 @@
 import { LinearClient } from '@linear/sdk';
 import 'dotenv/config';
 
+// Initialize the Linear Client
 const linearClient = new LinearClient({ apiKey: process.env.LINEAR_API_KEY });
 
-// --- NIA SEARCH WRAPPER ---
+/**
+ * Step 1: Query the Nia API for code context
+ */
 async function getNiaContext(issueTitle, issueDescription) {
-  const query = `${issueTitle} ${issueDescription || ''}`;
+  const query = `Find code related to: ${issueTitle}. ${issueDescription || ''}`;
   
-  // SAFE MODE: Set this to 'true' only when you want to use a real credit
-  const USE_REAL_NIA = false; 
+  const USE_REAL_NIA = true; 
 
   if (!USE_REAL_NIA) {
     console.log("🛠️ [MOCK] Nia is analyzing: " + issueTitle);
     return [
-      { file: "src/auth/middleware.ts", snippet: "const TOKEN_EXPIRY = '5m';" },
-      { file: "src/config/session.config.js", snippet: "timeout: 300000 // 5 minutes" }
+      { file: "test-linear.js", snippet: "const linearClient = new LinearClient(...);" }
     ];
   }
 
-  // REAL API CALL (Only runs if USE_REAL_NIA is true)
-  const response = await fetch("https://apigcp.trynia.ai/v2/universal-search", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${process.env.NIA_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      query: query,
-      search_mode: "unified"
-    })
-  });
-  
-  const data = await response.json();
-  return data.results; 
+  console.log("📡 Sending real query to Nia...");
+
+  try {
+    const response = await fetch("https://apigcp.trynia.ai/v2/query", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.NIA_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        // Updated to include the 'messages' field required by Nia
+        messages: [
+          { role: "user", content: query }
+        ],
+        search_mode: "unified"
+      })
+    });
+    
+    const data = await response.json();
+    
+    // We keep this log so we can see how Nia structures the successful search results
+    console.log("🔍 Nia Raw Response:", JSON.stringify(data, null, 2));
+    
+    // Nia v2 usually returns an array in 'results'
+    return data.results || data.matches || []; 
+  } catch (error) {
+    console.error("❌ Nia API Error:", error.message);
+    return [];
+  }
 }
 
-// --- MAIN WORKFLOW ---
+/**
+ * Step 2: Post the found context back to Linear as a comment
+ */
+async function postCommentToLinear(issueId, context) {
+  if (context.length === 0) return;
+
+  const commentHeader = "🤖 **Nia-Link: Relevant Code Context Found**\n\n";
+  
+  const commentBody = context.map(res => {
+    const fileName = res.file_path || res.file || "Unknown File";
+    const snippetText = res.content || res.snippet || "No snippet available";
+    return `* **File:** \`${fileName}\` \n  \`\`\`javascript\n  ${snippetText}\n  \`\`\``;
+  }).join('\n\n');
+
+  try {
+    await linearClient.createComment({
+      issueId: issueId,
+      body: commentHeader + commentBody
+    });
+    console.log("📝 Successfully posted context to Linear!");
+  } catch (error) {
+    console.error("❌ Linear Comment Error:", error.message);
+  }
+}
+
+/**
+ * MAIN WORKFLOW
+ */
 async function run() {
   try {
+    console.log("--- Starting Nia-Linear Bridge ---");
     const me = await linearClient.viewer;
+    console.log(`👤 Authenticated as: ${me.name}`);
+
     const issues = await me.assignedIssues();
 
     if (issues.nodes.length > 0) {
       const issue = issues.nodes[0];
-      console.log(`\n✅ Found Issue: "${issue.title}"`);
+      console.log(`✅ Processing Issue: "${issue.title}"`);
 
       // 1. Get Context from Nia
       const context = await getNiaContext(issue.title, issue.description);
       
-      console.log("\n📍 Nia suggests checking these files:");
-      context.forEach(res => {
-        console.log(`- ${res.file}: "${res.snippet}"`);
-      });
+      if (context && context.length > 0) {
+        console.log(`🎯 Nia found ${context.length} relevant snippets.`);
+        // 2. Post to Linear
+        await postCommentToLinear(issue.id, context);
+      } else {
+        console.log("ℹ️ Nia returned no matches. Check if the issue title matches your code.");
+      }
 
-      // 2. Next Goal: Post this back to Linear as a comment!
-      console.log("\n🚀 Ready to post context back to Linear...");
-
+    } else {
+      console.log("📭 0 issues assigned to you. Assign the 'Refactor' issue in Linear first.");
     }
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("🚨 Workflow Error:", error.message);
   }
 }
 

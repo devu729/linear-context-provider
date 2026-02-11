@@ -12,6 +12,7 @@
   "type": "module",
   "dependencies": {
     "@linear/sdk": "^73.0.0",
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1"
   }
 }
