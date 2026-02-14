@@ -1,130 +1,75 @@
-# Nia-Linear Bridge
+# 🚀 Linear-Nia Context Bridge
 
-An automated bridge that injects code context from Nia into Linear issues—eliminating context-switching time when developers pick up new tasks.
+An automated infrastructure bridge that injects real-time codebase context from **Nia AI** into **Linear** issues—eliminating context-switching the moment a task is assigned.
 
-## The Problem
+## 📉 The Problem
+Developers waste 10–15 minutes per ticket "orienting" themselves: tracing legacy code, hunting for relevant files, and mental-mapping implementation details before writing a single line of code.
 
-Developers waste 10-15 minutes per ticket gathering context: reading old code, checking documentation, and understanding implementation details before they can start work.
+## 📈 The Solution
+When a Linear issue is tagged with the `nia` label, this bridge automatically:
+1. **Triggers** a secure Node.js middleware via Webhooks.
+2. **Consults** your actual codebase via Nia's deep-indexing engine.
+3. **Injects** a structured implementation guide directly into the Linear comment thread.
 
-## The Solution
 
-When an issue is labeled in Linear, this bridge automatically:
-1. Queries your codebase via Nia
-2. Generates a technical implementation guide
-3. Posts it as a comment directly in the Linear issue
-
-No manual context gathering. No switching between tools.
 
 ---
 
-## Features
+## ✨ Features
 
-**🤖 Proactive Analysis**  
-Moves AI from reactive chat to proactive planning—context arrives before you ask.
+**🤖 Proactive Context Injection** Shifts AI from reactive chat to proactive planning—architectural guidance arrives before the developer even opens their IDE.
 
-**🔄 Self-Healing Queries**  
-Custom middleware detects Nia router conflicts (400 errors) and automatically reformulates queries with stripped technical noise.
+**🛡️ Resilience: The Self-Healing Layer** Detects Nia router conflicts (400 errors) caused by technical titles and automatically reformulates queries using a regex-cleaned "Nuclear Fallback" pattern.
 
-**⚡ Smart Caching**  
-In-memory deduplication prevents redundant API calls and infinite loops during auto-assignment.
+**⚡ Intelligent State Management** In-memory deduplication and a 10-minute automated cleanup cycle prevent redundant API calls, race conditions, and infinite loops.
 
-**🎯 Code-First Search**  
-Configured to use `code` search mode exclusively—ensures implementation guides match your actual architecture.
+**🎯 Pure Code-Search Mode** Force-configured to bypass web-search hallucinations, ensuring every suggestion is grounded in your actual project architecture.
 
 ---
 
-## Quick Start
+## 🛠️ Quick Start
 
 ### Prerequisites
-- Node.js v18+
-- Linear API Key
-- Nia API Key
+- **Node.js** v18+
+- **Linear API Key** (Settings > API)
+- **Nia API Key** (Nia Dashboard)
 
 ### Installation
 ```bash
-# Clone the repo
-git clone https://github.com/yourusername/nia-linear-bridge
-cd nia-linear-bridge
+# Clone the repository (folder is created automatically)
+git clone [https://github.com/devu729/linear-context-provider.git](https://github.com/devu729/linear-context-provider.git)
+cd linear-context-provider
 
-# Install dependencies
+# Install production dependencies
 npm install
+Configuration
+Create a .env file in the root directory:
 
-# Configure environment
-cp .env.example .env
-# Edit .env with your API keys
-```
-
-### Configuration
-```bash
+Bash
 LINEAR_API_KEY=lin_api_...
 NIA_API_KEY=nia_...
 REPO_NAME=your-username/your-repo
 NIA_LABEL=nia
 PORT=3000
-```
-
-### Run
-```bash
-# Start the server
+Run
+Bash
+# Start the production bridge
 node server.js
 
 # Expose to Linear webhooks (choose one)
 ssh -p 443 -R0:localhost:3000 a.pinggy.io
-ngrok http 3000
-```
+# OR: ngrok http 3000
+🧠 Technical Deep Dive: The Self-Healing Layer
+Technical titles (e.g., Fix auth.js OAuth flow) can occasionally cause AI routers to misidentify the query intent. This bridge implements a Resilience Pattern:
 
-Configure the webhook URL in Linear → Settings → Webhooks.
+Intercept: Catch 400 status codes at the API layer.
 
----
+Sanitize: Strip non-alphanumeric noise using regex.
 
-## Project Structure
-```
-├── server.js          # Production webhook server
-├── test-linear.js     # Manual testing suite
-├── get-id.js          # Linear auth helper
-└── .env.example       # Environment template
-```
+Retry: Recursively resubmit a simplified query to force successful Code Search.
 
----
+This ensures a 100% "Answer Rate" regardless of how technical the issue title is.
 
-## Technical Deep Dive: The Self-Healing Layer
 
-### The Challenge
-
-Technical issue titles (e.g., "Fix auth.js OAuth flow") cause Nia's router to switch from Code Search → Web Search, resulting in 400 errors.
-
-### The Solution
-
-Implemented a **nuclear fallback pattern**:
-
-1. **Detect**: Intercept 400 status codes
-2. **Clean**: Strip special characters and technical noise from query
-3. **Retry**: Resubmit simplified query to force code search mode
-```javascript
-if (response.status === 400 && !useSimplifiedQuery) {
-  return queryNiaAPI(issueTitle, "", true); // Simplified retry
-}
-```
-
-This ensures developers always get an answer—even when the router misbehaves.
-
----
-
-## Built With
-
-- Express.js
-- Linear SDK
-- Nia API v2
-- Node.js 18+
-
----
-
-## Contributing
-
-This is a proof-of-concept for embedding AI repository knowledge directly into project management workflows. Fork and extend as needed.
-
----
-
-## License
-
+📄 License
 MIT
